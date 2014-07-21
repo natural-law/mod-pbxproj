@@ -41,12 +41,18 @@ import re
 import shutil
 import subprocess
 import uuid
+import sys
 
 from UserDict import IterableUserDict
 from UserList import UserList
 
 regex = '[a-zA-Z0-9\\._/-]*'
 
+def os_is_win32():
+    return sys.platform == 'win32'
+
+def os_is_mac():
+    return sys.platform == 'darwin'
 
 class PBXEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -144,6 +150,31 @@ class PBXType(PBXDict):
     def Create(cls, *args, **kwargs):
         return cls(*args, **kwargs)
 
+FILE_TYPE_INFO = {
+    'archive.ar' : 'PBXFrameworksBuildPhase',
+    'wrapper.application': None,
+    'sourcecode.asm': 'PBXSourcesBuildPhase',
+    'sourcecode.c.c': 'PBXSourcesBuildPhase',
+    'sourcecode.cpp.cpp': 'PBXSourcesBuildPhase',
+    'wrapper.framework': 'PBXFrameworksBuildPhase',
+    'sourcecode.c.h': None,
+    'image.icns': 'PBXResourcesBuildPhase',
+    'sourcecode.c.objc': 'PBXSourcesBuildPhase',
+    'sourcecode.cpp.objcpp': 'PBXSourcesBuildPhase',
+    'wrapper.nib': 'PBXResourcesBuildPhase',
+    'text.plist.xml': 'PBXResourcesBuildPhase',
+    'text.json': 'PBXResourcesBuildPhase',
+    'image.png': 'PBXResourcesBuildPhase',
+    'text.rtf': 'PBXResourcesBuildPhase',
+    'image.tiff': 'PBXResourcesBuildPhase',
+    'text': 'PBXResourcesBuildPhase',
+    'wrapper.pb-project': None,
+    'file.xib': 'PBXResourcesBuildPhase',
+    'text.plist.strings': 'PBXResourcesBuildPhase',
+    'wrapper.plug-in': 'PBXResourcesBuildPhase',
+    'compiled.mach-o.dylib': 'PBXFrameworksBuildPhase'
+}
+
 
 class PBXFileReference(PBXType):
     def __init__(self, d=None):
@@ -151,30 +182,30 @@ class PBXFileReference(PBXType):
         self.build_phase = None
 
     types = {
-        '.a': ('archive.ar', 'PBXFrameworksBuildPhase'),
-        '.app': ('wrapper.application', None),
-        '.s': ('sourcecode.asm', 'PBXSourcesBuildPhase'),
-        '.c': ('sourcecode.c.c', 'PBXSourcesBuildPhase'),
-        '.cpp': ('sourcecode.cpp.cpp', 'PBXSourcesBuildPhase'),
-        '.framework': ('wrapper.framework', 'PBXFrameworksBuildPhase'),
-        '.h': ('sourcecode.c.h', None),
-        '.hpp': ('sourcecode.c.h', None),
-        '.icns': ('image.icns', 'PBXResourcesBuildPhase'),
-        '.m': ('sourcecode.c.objc', 'PBXSourcesBuildPhase'),
-        '.j': ('sourcecode.c.objc', 'PBXSourcesBuildPhase'),
-        '.mm': ('sourcecode.cpp.objcpp', 'PBXSourcesBuildPhase'),
-        '.nib': ('wrapper.nib', 'PBXResourcesBuildPhase'),
-        '.plist': ('text.plist.xml', 'PBXResourcesBuildPhase'),
-        '.json': ('text.json', 'PBXResourcesBuildPhase'),
-        '.png': ('image.png', 'PBXResourcesBuildPhase'),
-        '.rtf': ('text.rtf', 'PBXResourcesBuildPhase'),
-        '.tiff': ('image.tiff', 'PBXResourcesBuildPhase'),
-        '.txt': ('text', 'PBXResourcesBuildPhase'),
-        '.xcodeproj': ('wrapper.pb-project', None),
-        '.xib': ('file.xib', 'PBXResourcesBuildPhase'),
-        '.strings': ('text.plist.strings', 'PBXResourcesBuildPhase'),
-        '.bundle': ('wrapper.plug-in', 'PBXResourcesBuildPhase'),
-        '.dylib': ('compiled.mach-o.dylib', 'PBXFrameworksBuildPhase')
+        '.a': 'archive.ar',
+        '.app': 'wrapper.application',
+        '.s': 'sourcecode.asm',
+        '.c': 'sourcecode.c.c',
+        '.cpp': 'sourcecode.cpp.cpp',
+        '.framework': 'wrapper.framework',
+        '.h': 'sourcecode.c.h',
+        '.hpp': 'sourcecode.c.h',
+        '.icns': 'image.icns',
+        '.m': 'sourcecode.c.objc',
+        '.j': 'sourcecode.c.objc',
+        '.mm': 'sourcecode.cpp.objcpp',
+        '.nib': 'wrapper.nib',
+        '.plist': 'text.plist.xml',
+        '.json': 'text.json',
+        '.png': 'image.png',
+        '.rtf': 'text.rtf',
+        '.tiff': 'image.tiff',
+        '.txt': 'text',
+        '.xcodeproj': 'wrapper.pb-project',
+        '.xib': 'file.xib',
+        '.strings': 'text.plist.strings',
+        '.bundle': 'wrapper.plug-in',
+        '.dylib': 'compiled.mach-o.dylib'
     }
 
     trees = [
@@ -196,7 +227,8 @@ class PBXFileReference(PBXType):
             build_phase = None
             ext = ''
         else:
-            f_type, build_phase = PBXFileReference.types.get(ext, ('?', 'PBXResourcesBuildPhase'))
+            f_type = PBXFileReference.types.get(ext, '?')
+            build_phase = FILE_TYPE_INFO.get(f_type, 'PBXResourcesBuildPhase')
 
         self['lastKnownFileType'] = f_type
         self.build_phase = build_phase
@@ -1147,6 +1179,43 @@ class XcodeProject(PBXDict):
             writer.writeValue(self.data)
             writer.writeln("</plist>")
 
+    def get_comment(self, key, whole_data):
+        obj_data = whole_data.get(key)
+        obj_isa = obj_data.get('isa')
+
+        ret = ""
+        if obj_isa == "PBXBuildFile":
+            fileRef = obj_data.get("fileRef")
+            fileRef_info = whole_data.get(fileRef)
+            if fileRef_info.has_key("name"):
+                fileName = fileRef_info.get("name")
+            elif fileRef_info.has_key("path"):
+                fileName = fileRef_info.get("path")
+            fileType = FILE_TYPE_INFO.get(fileRef_info.get("lastKnownFileType"), "PBXResourcesBuildPhase")
+
+            if fileType == "PBXFrameworksBuildPhase":
+                ret = "%s in %s" % (fileName, "Frameworks")
+            elif fileType == "PBXSourcesBuildPhase":
+                ret = "%s in %s" % (fileName, "Sources")
+            elif fileType == "PBXResourcesBuildPhase":
+                ret = "%s in %s" % (fileName, "Resources")
+            else:
+                ret = "%s" % fileName
+        elif 'name' in obj_data:
+            ret = obj_data.get('name')
+        elif 'path' in obj_data:
+            ret = obj_data.get('path')
+        else:
+            if obj_isa == 'PBXProject':
+                ret = "Project object"
+            elif obj_isa[0:3] == 'PBX':
+                ret = obj_isa[3:-10]
+            else:
+                ret = 'Build configuration list for PBXNativeTarget "TARGET_NAME"'
+
+        return ret
+
+
     def save_new_format(self, file_name=None):
         """Save in Xcode 3.2 compatible (new) format"""
         if not file_name:
@@ -1158,37 +1227,25 @@ class XcodeProject(PBXDict):
         uuids = dict()
 
         for key in objs:
-            l = list()
-
-            if objs.get(key).get('isa') in sections:
-                l = sections.get(objs.get(key).get('isa'))
+            obj_isa = objs.get(key).get('isa')
+            if obj_isa in sections:
+                l = sections.get(obj_isa)
+            else:
+                l = list()
 
             l.append(tuple([key, objs.get(key)]))
-            sections[objs.get(key).get('isa')] = l
+            sections[obj_isa] = l
 
-            if 'name' in objs.get(key):
-                uuids[key] = objs.get(key).get('name')
-            elif 'path' in objs.get(key):
-                uuids[key] = objs.get(key).get('path')
-            else:
-                if objs.get(key).get('isa') == 'PBXProject':
-                    uuids[objs.get(key).get('buildConfigurationList')] = 'Build configuration list for PBXProject "Unity-iPhone"'
-                elif objs.get(key).get('isa')[0:3] == 'PBX':
-                    uuids[key] = objs.get(key).get('isa')[3:-10]
-                else:
-                    uuids[key] = 'Build configuration list for PBXNativeTarget "TARGET_NAME"'
+            uuids[key] = self.get_comment(key, objs)
 
         ro = self.data.get('rootObject')
-        uuids[ro] = 'Project Object'
+        uuids[ro] = 'Project object'
 
         for key in objs:
-            # transitive references (used in the BuildFile section)
-            if 'fileRef' in objs.get(key) and objs.get(key).get('fileRef') in uuids:
-                uuids[key] = uuids[objs.get(key).get('fileRef')]
-
-            # transitive reference to the target name (used in the Native target section)
-            if objs.get(key).get('isa') == 'PBXNativeTarget':
-                uuids[objs.get(key).get('buildConfigurationList')] = uuids[objs.get(key).get('buildConfigurationList')].replace('TARGET_NAME', uuids[key])
+            obj_isa = objs.get(key).get('isa')
+            if obj_isa == "PBXNativeTarget":
+                obj_data = objs.get(key)
+                uuids[obj_data.get("buildConfigurationList")] = "Build configuration list for PBXNativeTarget \"%s\"" % obj_data.get("name")
 
         self.uuids = uuids
         self.sections = sections
@@ -1253,10 +1310,10 @@ class XcodeProject(PBXDict):
                         ('PBXResourcesBuildPhase', True),
                         ('PBXShellScriptBuildPhase', True),
                         ('PBXSourcesBuildPhase', True),
+                        ('PBXVariantGroup', True),
                         ('XCBuildConfiguration', True),
                         ('XCConfigurationList', True),
                         ('PBXTargetDependency', True),
-                        ('PBXVariantGroup', True),
                         ('PBXReferenceProxy', True),
                         ('PBXContainerItemProxy', True)]
 
@@ -1327,7 +1384,10 @@ class XcodeProject(PBXDict):
 
         else:
             if len(root) > 0 and re.match(regex, root).group(0) == root:
-                out.write(root.encode("utf-8"))
+                if root.encode("utf-8").find("-") >= 0:
+                    out.write('"' + root.encode("utf-8") + '"')
+                else:
+                    out.write(root.encode("utf-8"))
             else:
                 out.write('"' + XcodeProject.addslashes(root.encode("utf-8")) + '"')
 
@@ -1336,10 +1396,13 @@ class XcodeProject(PBXDict):
 
     @classmethod
     def Load(cls, path):
-        cls.plutil_path = os.path.join(os.path.split(__file__)[0], 'plutil')
-
-        if not os.path.isfile(XcodeProject.plutil_path):
+        if os_is_mac():
             cls.plutil_path = 'plutil'
+        elif os_is_win32():
+            cls.plutil_path = os.path.join(os.path.dirname(__file__), "plutil-win32", "plutil.exe")
+        else:
+            print("Can't find 'plutil' to parse the project file.")
+            exit(1)
 
         # load project by converting to xml and then convert that using plistlib
         p = subprocess.Popen([XcodeProject.plutil_path, '-convert', 'xml1', '-o', '-', path], stdout=subprocess.PIPE)
@@ -1347,7 +1410,7 @@ class XcodeProject(PBXDict):
 
         # If the plist was malformed, returncode will be non-zero
         if p.returncode != 0:
-            print stdout
+            print(stdout)
             return None
 
         tree = plistlib.readPlistFromString(stdout)
