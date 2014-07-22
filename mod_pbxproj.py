@@ -743,6 +743,15 @@ class XcodeProject(PBXDict):
 
         return phases
 
+    def get_native_target(self, target_name):
+        target = None
+        for obj in self.objects.values():
+            if obj.get('isa') == "PBXNativeTarget" and obj.get("name") == target_name:
+                target = obj
+                break
+
+        return target
+
     def get_relative_path(self, os_path):
         return os.path.relpath(os_path, self.source_root)
 
@@ -874,15 +883,15 @@ class XcodeProject(PBXDict):
         head, tail = ntpath.split(path)
         return tail or ntpath.basename(head)
 
-    def add_file_if_doesnt_exist(self, f_path, parent=None, tree='SOURCE_ROOT', create_build_files=True, weak=False, ignore_unknown_type=False):
+    def add_file_if_doesnt_exist(self, f_path, parent=None, tree='SOURCE_ROOT', create_build_files=True, weak=False, ignore_unknown_type=False, target=None):
         for obj in self.objects.values():
             if 'path' in obj:
                 if self.path_leaf(f_path) == self.path_leaf(obj.get('path')):
                     return []
 
-        return self.add_file(f_path, parent, tree, create_build_files, weak, ignore_unknown_type=ignore_unknown_type)
+        return self.add_file(f_path, parent, tree, create_build_files, weak, ignore_unknown_type=ignore_unknown_type, target=target)
 
-    def add_file(self, f_path, parent=None, tree='SOURCE_ROOT', create_build_files=True, weak=False, ignore_unknown_type=False):
+    def add_file(self, f_path, parent=None, tree='SOURCE_ROOT', create_build_files=True, weak=False, ignore_unknown_type=False, target=None):
         results = []
         abs_path = ''
 
@@ -908,13 +917,28 @@ class XcodeProject(PBXDict):
 
         # create a build file for the file ref
         if file_ref.build_phase and create_build_files:
-            phases = self.get_build_phases(file_ref.build_phase)
 
-            for phase in phases:
-                build_file = PBXBuildFile.Create(file_ref, weak=weak)
+            if target is None:
+                phases = self.get_build_phases(file_ref.build_phase)
 
-                phase.add_build_file(build_file)
-                results.append(build_file)
+                for phase in phases:
+                    build_file = PBXBuildFile.Create(file_ref, weak=weak)
+
+                    phase.add_build_file(build_file)
+                    results.append(build_file)
+            else:
+                target_obj = self.get_native_target(target)
+                if target_obj is None:
+                    print("Can't find target %s" % target)
+                else:
+                    phases = target_obj.get("buildPhases")
+                    for phaseid in phases:
+                        phase_info = self.objects.get(phaseid)
+                        if phase_info.get("isa") == file_ref.build_phase:
+                            build_file = PBXBuildFile.Create(file_ref, weak=weak)
+
+                            phase_info.add_build_file(build_file)
+                            results.append(build_file)
 
             if abs_path and tree == 'SOURCE_ROOT' \
                         and os.path.isfile(abs_path) \
@@ -958,6 +982,46 @@ class XcodeProject(PBXDict):
 
     def remove_group(self, grp):
         pass
+
+    def remove_lib(self, lib_file_name):
+        objs = self.data.get('objects')
+        fileRefID = ""
+        for key in objs:
+            obj = objs.get(key)
+            if obj.get('isa') == "PBXFileReference" and obj.get("name") == lib_file_name:
+                fileRefID = key
+                objs.remove(key)
+                break
+
+        if len(fileRefID) <= 0:
+            print("Can't find the lib file in the project configuration.")
+            return
+
+        self.modified = True
+
+        buildFileID = ""
+        for key in objs:
+            obj = objs.get(key)
+            if obj.get('isa') == "PBXBuildFile" and obj.get("fileRef") == fileRefID:
+                buildFileID = key
+                objs.remove(key)
+                break
+
+        for key in objs:
+            obj = objs.get(key)
+            if obj.get('isa') == "PBXFrameworksBuildPhase":
+                files = obj.get("files")
+                for fileID in files:
+                    if fileID == buildFileID:
+                        files.remove(fileID)
+                        break
+
+            if obj.get('isa') == "PBXGroup":
+                children = obj.get("children")
+                for child in children:
+                    if child == fileRefID:
+                        children.remove(child)
+                        break
 
     def remove_file(self, id, recursive=True):
         if not PBXType.IsGuid(id):
