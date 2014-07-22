@@ -487,21 +487,57 @@ class XCBuildConfiguration(PBXType):
         if base not in self:
             self[base] = PBXDict()
 
+        if key not in self[base]:
+            self[base][key] = PBXList()
+            self[base][key].add("$(inherited)")
+        elif isinstance(self[base][key], basestring):
+            self[base][key] = PBXList(self[base][key])
+
         for path in paths:
             if recursive and not path.endswith('/**'):
                 path = os.path.join(path, '**')
 
-            if key not in self[base]:
-                self[base][key] = PBXList()
-            elif isinstance(self[base][key], basestring):
-                self[base][key] = PBXList(self[base][key])
-
-            if escape:
-                if self[base][key].add('"%s"' % path):  # '\\"%s\\"' % path
-                    modified = True
+            if os.path.isabs(path):
+                add_path = path
             else:
-                if self[base][key].add(path):  # '\\"%s\\"' % path
-                    modified = True
+                add_path = "$(SRCROOT)/%s" % path
+
+            if self[base][key].add(add_path):
+                modified = True
+
+        return modified
+
+    def add_user_header_search_paths(self, paths, recursive=True):
+        modified = False
+
+        if not isinstance(paths, list):
+            paths = [paths]
+
+        base = "buildSettings"
+        key = "USER_HEADER_SEARCH_PATHS"
+        if base not in self:
+            self[base] = PBXDict()
+
+        if key not in self[base]:
+            self[base][key] = "$(inherited)"
+
+        path_list = self[base][key].split(" ")
+
+        for path in paths:
+            if recursive and not path.endswith('/**'):
+                path = os.path.join(path, '**')
+
+            if os.path.isabs(path):
+                add_path = path
+            else:
+                add_path = "$(SRCROOT)/%s" % path
+
+            if add_path not in path_list:
+                path_list.append(add_path)
+                modified = True
+
+        if modified:
+            self[base][key] = " ".join(path_list)
 
         return modified
 
@@ -641,12 +677,45 @@ class XcodeProject(PBXDict):
             if b.remove_other_ldflags(flags):
                 self.modified = True
 
-    def add_header_search_paths(self, paths, recursive=True):
-        build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+    def add_user_header_search_paths(self, paths, target_name=None, recursive=True):
+        if target_name is None:
+            build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
 
-        for b in build_configs:
-            if b.add_header_search_paths(paths, recursive):
-                self.modified = True
+            for b in build_configs:
+                if b.add_user_header_search_paths(paths, recursive):
+                    self.modified = True
+        else:
+            target_obj = self.get_native_target(target_name)
+            if target_obj is None:
+                print("Can't find target %s" % target_name)
+            else:
+                build_cfg_list_id = target_obj.get("buildConfigurationList")
+                build_cfg_list = self.objects.get(build_cfg_list_id)
+                build_cfgs = build_cfg_list.get("buildConfigurations")
+                for cfg_id in build_cfgs:
+                    cfg = self.objects.get(cfg_id)
+                    if cfg.add_user_header_search_paths(paths, recursive):
+                        self.modified = True
+
+    def add_header_search_paths(self, paths, target_name=None, recursive=True):
+        if target_name is None:
+            build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+            for b in build_configs:
+                if b.add_header_search_paths(paths, recursive):
+                    self.modified = True
+        else:
+            target_obj = self.get_native_target(target_name)
+            if target_obj is None:
+                print("Can't find target %s" % target_name)
+            else:
+                build_cfg_list_id = target_obj.get("buildConfigurationList")
+                build_cfg_list = self.objects.get(build_cfg_list_id)
+                build_cfgs = build_cfg_list.get("buildConfigurations")
+                for cfg_id in build_cfgs:
+                    cfg = self.objects.get(cfg_id)
+                    if cfg.add_header_search_paths(paths, recursive):
+                        self.modified = True
 
     def add_framework_search_paths(self, paths, recursive=True):
         build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
@@ -655,14 +724,26 @@ class XcodeProject(PBXDict):
             if b.add_framework_search_paths(paths, recursive):
                 self.modified = True
 
-    def add_library_search_paths(self, paths, recursive=True):
-        build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+    def add_library_search_paths(self, paths, target_name=None, recursive=True):
 
-        for b in build_configs:
-            if b.add_library_search_paths(paths, recursive):
-                self.modified = True
+        if target_name is None:
+            build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
 
-                # TODO: need to return value if project has been modified
+            for b in build_configs:
+                if b.add_library_search_paths(paths, recursive):
+                    self.modified = True
+        else:
+            target_obj = self.get_native_target(target_name)
+            if target_obj is None:
+                print("Can't find target %s" % target_name)
+            else:
+                build_cfg_list_id = target_obj.get("buildConfigurationList")
+                build_cfg_list = self.objects.get(build_cfg_list_id)
+                build_cfgs = build_cfg_list.get("buildConfigurations")
+                for cfg_id in build_cfgs:
+                    cfg = self.objects.get(cfg_id)
+                    if cfg.add_library_search_paths(paths, recursive):
+                        self.modified = True
 
     def get_obj(self, id):
         return self.objects.get(id)
