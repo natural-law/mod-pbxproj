@@ -457,9 +457,9 @@
 		C08689C318D370C90093E810 /* background.caf in Resources */ = {isa = PBXBuildFile; fileRef = C08689C018D370C90093E810 /* background.caf */; };
 		D60AE43417F7FFE100757E4B /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D60AE43317F7FFE100757E4B /* CoreMotion.framework */; };
 		EDCC747F17C455FD007B692C /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDCC747E17C455FD007B692C /* IOKit.framework */; };
+		F0A34C0AABF89E8685D4DB4F /* libbox2d Mac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E9904F269B25540BE49212DD /* libbox2d Mac.a */; };
 		FA9FF058196D406F00860F51 /* libcocos2dx Mac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9FF057196D406F00860F51 /* libcocos2dx Mac.a */; };
 		FA9FF05A196D407A00860F51 /* libCocosDenshion Mac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9FF059196D407A00860F51 /* libCocosDenshion Mac.a */; };
-		FA9FF05C196D409B00860F51 /* libbox2d Mac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9FF05B196D409B00860F51 /* libbox2d Mac.a */; };
 		FA9FF05E196D40A300860F51 /* libchipmunk Mac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9FF05D196D40A300860F51 /* libchipmunk Mac.a */; };
 		FA9FF060196D40AD00860F51 /* libcocos2dx-extensions Mac.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9FF05F196D40AD00860F51 /* libcocos2dx-extensions Mac.a */; };
 		FA9FF062196D40C500860F51 /* libCocosDenshion iOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9FF061196D40C500860F51 /* libCocosDenshion iOS.a */; };
@@ -978,10 +978,10 @@
 		C04F93591941B05400E9FEAB /* TileMapTest2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TileMapTest2.h; sourceTree = "<group>"; };
 		C08689C018D370C90093E810 /* background.caf */ = {isa = PBXFileReference; lastKnownFileType = file; name = background.caf; path = "../tests/cpp-tests/Resources/background.caf"; sourceTree = "<group>"; };
 		D60AE43317F7FFE100757E4B /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/CoreMotion.framework; sourceTree = DEVELOPER_DIR; };
+		E9904F269B25540BE49212DD /* libbox2d Mac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libbox2d Mac.a"; path = "../modules/box2d/prebuilt/mac/libbox2d Mac.a"; sourceTree = "<group>"; };
 		EDCC747E17C455FD007B692C /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		FA9FF057196D406F00860F51 /* libcocos2dx Mac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libcocos2dx Mac.a"; path = "../cocos/prebuilt/mac/libcocos2dx Mac.a"; sourceTree = "<group>"; };
 		FA9FF059196D407A00860F51 /* libCocosDenshion Mac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libCocosDenshion Mac.a"; path = "../modules/audio/prebuilt/mac/libCocosDenshion Mac.a"; sourceTree = "<group>"; };
-		FA9FF05B196D409B00860F51 /* libbox2d Mac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libbox2d Mac.a"; path = "../modules/Box2D/prebuilt/mac/libbox2d Mac.a"; sourceTree = "<group>"; };
 		FA9FF05D196D40A300860F51 /* libchipmunk Mac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libchipmunk Mac.a"; path = "../modules/chipmunk/prebuilt/mac/libchipmunk Mac.a"; sourceTree = "<group>"; };
 		FA9FF05F196D40AD00860F51 /* libcocos2dx-extensions Mac.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libcocos2dx-extensions Mac.a"; path = "../modules/extensions/prebuilt/mac/libcocos2dx-extensions Mac.a"; sourceTree = "<group>"; };
 		FA9FF061196D40C500860F51 /* libCocosDenshion iOS.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libCocosDenshion iOS.a"; path = "../modules/audio/prebuilt/ios/libCocosDenshion iOS.a"; sourceTree = "<group>"; };
@@ -997,7 +997,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				EDCC747F17C455FD007B692C /* IOKit.framework in Frameworks */,
-				FA9FF05C196D409B00860F51 /* libbox2d Mac.a in Frameworks */,
 				FA9FF060196D40AD00860F51 /* libcocos2dx-extensions Mac.a in Frameworks */,
 				1A9F808D177E98A600D9A1CB /* libcurl.dylib in Frameworks */,
 				FA9FF05E196D40A300860F51 /* libchipmunk Mac.a in Frameworks */,
@@ -1011,6 +1010,7 @@
 				15C64827165F394E007D4F18 /* QuartzCore.framework in Frameworks */,
 				15C64825165F3934007D4F18 /* OpenGL.framework in Frameworks */,
 				A05FCACA177C124500BE600E /* Cocoa.framework in Frameworks */,
+				F0A34C0AABF89E8685D4DB4F /* libbox2d Mac.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2523,9 +2523,9 @@
 			children = (
 				FA9FF05F196D40AD00860F51 /* libcocos2dx-extensions Mac.a */,
 				FA9FF05D196D40A300860F51 /* libchipmunk Mac.a */,
-				FA9FF05B196D409B00860F51 /* libbox2d Mac.a */,
 				FA9FF059196D407A00860F51 /* libCocosDenshion Mac.a */,
 				FA9FF057196D406F00860F51 /* libcocos2dx Mac.a */,
+				E9904F269B25540BE49212DD /* libbox2d Mac.a */,
 			);
 			name = "mac-libs";
 			sourceTree = "<group>";
@@ -3091,11 +3091,11 @@
 				INFOPLIST_FILE = "$(SRCROOT)/../tests/cpp-tests/proj.mac/Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/cocos/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/audio/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/Box2D/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/chipmunk/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/extensions/prebuilt/mac",
+					"$(SRCROOT)/../cocos/prebuilt/mac",
+					"$(SRCROOT)/../modules/Box2d/prebuilt/mac",
+					"$(SRCROOT)/../modules/audio/prebuilt/mac",
+					"$(SRCROOT)/../modules/chipmunk/prebuilt/mac",
+					"$(SRCROOT)/../modules/extensions/prebuilt/mac",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(inherited) $(SRCROOT)/../cocos/include/platform/mac $(SRCROOT)/../external/glfw3/include/mac";
 			};
@@ -3112,11 +3112,11 @@
 				INFOPLIST_FILE = "$(SRCROOT)/../tests/cpp-tests/proj.mac/Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/cocos/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/audio/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/Box2D/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/chipmunk/prebuilt/mac",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/extensions/prebuilt/mac",
+					"$(SRCROOT)/../cocos/prebuilt/mac",
+					"$(SRCROOT)/../modules/Box2d/prebuilt/mac",
+					"$(SRCROOT)/../modules/audio/prebuilt/mac",
+					"$(SRCROOT)/../modules/chipmunk/prebuilt/mac",
+					"$(SRCROOT)/../modules/extensions/prebuilt/mac",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(inherited) $(SRCROOT)/../cocos/include/platform/mac $(SRCROOT)/../external/glfw3/include/mac";
 				VALIDATE_PRODUCT = YES;
@@ -3136,11 +3136,11 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/audio/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/Box2D/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/chipmunk/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/extensions/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/cocos/prebuilt/ios",
+					"$(SRCROOT)/../cocos/prebuilt/ios",
+					"$(SRCROOT)/../modules/Box2d/prebuilt/ios",
+					"$(SRCROOT)/../modules/chipmunk/prebuilt/ios",
+					"$(SRCROOT)/../modules/audio/prebuilt/ios",
+					"$(SRCROOT)/../modules/extensions/prebuilt/ios",
 				);
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3161,11 +3161,11 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/audio/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/Box2D/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/chipmunk/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/modules/extensions/prebuilt/ios",
-					"/Users/cocos2d-x/MyWork/Cocos-Engine/release/cocos2d-x/cocos/prebuilt/ios",
+					"$(SRCROOT)/../cocos/prebuilt/ios",
+					"$(SRCROOT)/../modules/Box2d/prebuilt/ios",
+					"$(SRCROOT)/../modules/chipmunk/prebuilt/ios",
+					"$(SRCROOT)/../modules/audio/prebuilt/ios",
+					"$(SRCROOT)/../modules/extensions/prebuilt/ios",
 				);
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
