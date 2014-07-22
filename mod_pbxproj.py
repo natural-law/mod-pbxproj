@@ -541,6 +541,57 @@ class XCBuildConfiguration(PBXType):
 
         return modified
 
+    def remove_user_header_search_paths(self, paths):
+        modified = False
+
+        if not isinstance(paths, list):
+            paths = [paths]
+
+        base = "buildSettings"
+        key = "USER_HEADER_SEARCH_PATHS"
+        if base not in self or key not in self[base]:
+            return modified
+
+        path_list = self[base][key].split(" ")
+        for path in paths:
+            if os.path.isabs(path):
+                add_path = path
+            else:
+                add_path = "$(SRCROOT)/%s" % path
+
+            if add_path in path_list:
+                path_list.remove(add_path)
+                modified = True
+
+        if modified:
+            self[base][key] = " ".join(path_list)
+
+        return modified
+
+    def remove_library_search_paths(self, paths):
+        modified = False
+
+        if not isinstance(paths, list):
+            paths = [paths]
+
+        base = "buildSettings"
+        key = "LIBRARY_SEARCH_PATHS"
+        if base not in self or key not in self[base]:
+            return modified
+
+        path_list = self[base][key]
+        for path in paths:
+            if os.path.isabs(path):
+                add_path = path
+            else:
+                add_path = "$(SRCROOT)/%s" % path
+
+            if add_path in path_list:
+                path_list.remove(add_path)
+                modified = True
+
+        return modified
+
     def add_header_search_paths(self, paths, recursive=True):
         return self.add_search_paths(paths, 'buildSettings', 'HEADER_SEARCH_PATHS', recursive=recursive)
 
@@ -695,6 +746,46 @@ class XcodeProject(PBXDict):
                 for cfg_id in build_cfgs:
                     cfg = self.objects.get(cfg_id)
                     if cfg.add_user_header_search_paths(paths, recursive):
+                        self.modified = True
+
+    def remove_user_header_search_paths(self, paths, target_name=None):
+        if target_name is None:
+            build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+            for b in build_configs:
+                if b.remove_user_header_search_paths(paths):
+                    self.modified = True
+        else:
+            target_obj = self.get_native_target(target_name)
+            if target_obj is None:
+                print("Can't find target %s" % target_name)
+            else:
+                build_cfg_list_id = target_obj.get("buildConfigurationList")
+                build_cfg_list = self.objects.get(build_cfg_list_id)
+                build_cfgs = build_cfg_list.get("buildConfigurations")
+                for cfg_id in build_cfgs:
+                    cfg = self.objects.get(cfg_id)
+                    if cfg.remove_user_header_search_paths(paths):
+                        self.modified = True
+
+    def remove_library_search_paths(self, paths, target_name=None):
+        if target_name is None:
+            build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+            for b in build_configs:
+                if b.remove_library_search_paths(paths):
+                    self.modified = True
+        else:
+            target_obj = self.get_native_target(target_name)
+            if target_obj is None:
+                print("Can't find target %s" % target_name)
+            else:
+                build_cfg_list_id = target_obj.get("buildConfigurationList")
+                build_cfg_list = self.objects.get(build_cfg_list_id)
+                build_cfgs = build_cfg_list.get("buildConfigurations")
+                for cfg_id in build_cfgs:
+                    cfg = self.objects.get(cfg_id)
+                    if cfg.remove_library_search_paths(paths):
                         self.modified = True
 
     def add_header_search_paths(self, paths, target_name=None, recursive=True):
