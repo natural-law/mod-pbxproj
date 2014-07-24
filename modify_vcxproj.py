@@ -12,7 +12,10 @@ def os_is_mac():
 class VCXProject(object):
     def __init__(self, proj_file_path):
         self.xmldoc = minidom.parse(proj_file_path)
-        self.file_path = proj_file_path
+        if os.path.isabs(proj_file_path):
+            self.file_path = proj_file_path
+        else:
+            self.file_path = os.path.abspath(proj_file_path)
 
     def save(self, new_path=None):
         if new_path is None:
@@ -126,6 +129,6 @@ class VCXProject(object):
                 cmd_node = event_node.getElementsByTagName("Command")[0]
                 cmd = cmd_node.firstChild.nodeValue
                 if cmd.find(add_copy_cmd) < 0:
-                    newCmd = "%s\r\n%s" % (cmd, add_copy_cmd)
+                    newCmd = "%s\n%s" % (cmd, add_copy_cmd)
                     print("Add command line \"%s\" for \"%s\" in \"%s\" configuration" % (add_copy_cmd, cmd_event, cur_mode))
                     cmd_node.firstChild.nodeValue = newCmd

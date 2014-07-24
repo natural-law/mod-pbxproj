@@ -36,6 +36,17 @@ def test_vs():
 
     project.save()
 
+def test_android():
+    import modify_mk
+    proj_file_path = os.path.join(os.path.dirname(__file__), "Android.mk")
+
+    project = modify_mk.AndroidMK(proj_file_path)
+
+    project.remove_lib("cocostudio_static", "modules/cocostudio/prebuilt/android")
+    project.add_lib("cocostudio_static", "modules/cocostudio/prebuilt/android")
+
+    project.save()
+
 if __name__ == "__main__":
     tool_path = os.path.join(os.path.dirname(__file__), '..')
     sys.path.append(tool_path)
@@ -43,6 +54,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Generate prebuilt engine for Cocos Engine.")
     parser.add_argument('-x', dest='test_xcode', action="store_true", help='Test modify xcode project.')
     parser.add_argument('-v', dest='test_vs', action="store_true", help='Test modify VS project.')
+    parser.add_argument('-a', dest='test_android', action="store_true", help='Test modify Android.mk.')
     (args, unknown) = parser.parse_known_args()
 
     if len(unknown) > 0:
@@ -53,3 +65,6 @@ if __name__ == "__main__":
 
     if args.test_vs:
         test_vs()
+
+    if args.test_android:
+        test_android()
