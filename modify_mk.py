@@ -1,3 +1,6 @@
+#  Copyright 2014 Bill Zhang
+#  E-mail: lengaoxin@gmail.com
+
 import os
 import sys
 import re
@@ -10,7 +13,7 @@ def os_is_mac():
 
 class AndroidMK(object):
     FIND_LIB_PATTERN = r"^LOCAL_WHOLE_STATIC_LIBRARIES[ \t]*([:+])=[ \t]*(.*)$"
-    FIND_IMPORT_PATTERN = r"^\$\(call[ \t]*import-module,(.*)\)"
+    FIND_IMPORT_PATTERN = r"^\$\(call[ \t]*import-module,[ \t]*(.*)\)"
 
     FIND_INCLUDE_STATICLIB_PATTERN = r"^include[ \t]*\$\(BUILD_STATIC_LIBRARY\)"
     FIND_INCLUDE_SHAREDLIB_PATTERN = r"^include[ \t]*\$\(BUILD_SHARED_LIBRARY\)"

@@ -4,10 +4,10 @@ import os
 from argparse import ArgumentParser
 
 def test_xcode():
-    import mod_pbxproj
+    import modify_pbxproj
     proj_file_path = os.path.join(os.path.dirname(__file__), "project.pbxproj")
 
-    project = mod_pbxproj.XcodeProject.Load(proj_file_path)
+    project = modify_pbxproj.XcodeProject.Load(proj_file_path)
 
     # test remove lib
     project.remove_lib("libbox2d Mac.a")

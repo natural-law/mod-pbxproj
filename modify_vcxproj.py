@@ -1,3 +1,7 @@
+#  Copyright 2014 Bill Zhang
+#  E-mail: lengaoxin@gmail.com
+
+
 import os
 import sys
 
@@ -12,10 +16,19 @@ def os_is_mac():
 class VCXProject(object):
     def __init__(self, proj_file_path):
         self.xmldoc = minidom.parse(proj_file_path)
+        self.root_node = self.xmldoc.documentElement
         if os.path.isabs(proj_file_path):
             self.file_path = proj_file_path
         else:
             self.file_path = os.path.abspath(proj_file_path)
+
+    def get_or_create_node(self, parent, node_name):
+        children = parent.getElementsByTagName(node_name)
+        if len(children) > 0:
+            return children[0]
+        else:
+            child = parent.createElement(node_name)
+            return child
 
     def save(self, new_path=None):
         if new_path is None:
@@ -53,8 +66,8 @@ class VCXProject(object):
 
         print("Saving Finished")
 
-    def remove_lib(self, lib_name, lib_dir):
-        cfg_nodes = self.xmldoc.getElementsByTagName("ItemDefinitionGroup")
+    def remove_lib(self, lib_name):
+        cfg_nodes = self.root_node.getElementsByTagName("ItemDefinitionGroup")
         for cfg_node in cfg_nodes:
             cond_attr = cfg_node.attributes["Condition"].value
             if cond_attr.lower().find("debug") >= 0:
@@ -63,44 +76,23 @@ class VCXProject(object):
                 cur_mode = "Release"
 
             # remove the linked lib config
-            link_node = cfg_node.getElementsByTagName("Link")[0]
-            depends_node = link_node.getElementsByTagName("AdditionalDependencies")[0]
+            link_node = self.get_or_create_node(cfg_node, "Link")
+            depends_node = self.get_or_create_node(link_node, "AdditionalDependencies")
             link_info = depends_node.firstChild.nodeValue
             cur_libs = link_info.split(";")
             link_modified = False
-            for lib in cur_libs:
-                if lib == lib_name:
-                    print("Remove linked library %s from \"%s\" configuration" % (lib, cur_mode))
-                    cur_libs.remove(lib)
-                    link_modified = True
+
+            if lib_name in cur_libs:
+                print("Remove linked library %s from \"%s\" configuration" % (lib_name, cur_mode))
+                cur_libs.remove(lib_name)
+                link_modified = True
 
             if link_modified:
                 link_info = ";".join(cur_libs)
                 depends_node.firstChild.nodeValue = link_info
 
-            # remove the copy command in build event
-            build_events = ("PreBuildEvent", "PostBuildEvent", "PreLinkEvent")
-            for event in build_events:
-                event_node = cfg_node.getElementsByTagName(event)[0]
-                cmd_node = event_node.getElementsByTagName("Command")[0]
-                cmd = cmd_node.firstChild.nodeValue
-                cmd_modified = False
-                if len(cmd) > 0:
-                    import io
-                    buf = io.StringIO(cmd)
-                    newlines = []
-                    for cmd_line in buf.readlines():
-                        if cmd_line.find(lib_dir) < 0:
-                            newlines.append(cmd_line)
-                        else:
-                            print("Remove command line \"%s\" from \"%s\" in \"%s\" configuration" % (cmd_line, event, cur_mode))
-                            cmd_modified = True
-
-                if cmd_modified:
-                    cmd_node.firstChild.nodeValue = ("".join(newlines)).rstrip("\r\n")
-
-    def add_lib(self, lib_name, add_copy_cmd=None, cmd_event="PreBuildEvent"):
-        cfg_nodes = self.xmldoc.getElementsByTagName("ItemDefinitionGroup")
+    def add_lib(self, lib_name):
+        cfg_nodes = self.root_node.getElementsByTagName("ItemDefinitionGroup")
         for cfg_node in cfg_nodes:
             cond_attr = cfg_node.attributes["Condition"].value
             if cond_attr.lower().find("debug") >= 0:
@@ -109,8 +101,8 @@ class VCXProject(object):
                 cur_mode = "Release"
 
             # add the linked lib config
-            link_node = cfg_node.getElementsByTagName("Link")[0]
-            depends_node = link_node.getElementsByTagName("AdditionalDependencies")[0]
+            link_node = self.get_or_create_node(cfg_node, "Link")
+            depends_node = self.get_or_create_node(link_node, "AdditionalDependencies")
             link_info = depends_node.firstChild.nodeValue
             cur_libs = link_info.split(";")
             link_modified = False
@@ -123,12 +115,87 @@ class VCXProject(object):
                 link_info = ";".join(cur_libs)
                 depends_node.firstChild.nodeValue = link_info
 
-            # add copy cmd
-            if add_copy_cmd is not None:
-                event_node = cfg_node.getElementsByTagName(cmd_event)[0]
-                cmd_node = event_node.getElementsByTagName("Command")[0]
-                cmd = cmd_node.firstChild.nodeValue
-                if cmd.find(add_copy_cmd) < 0:
-                    newCmd = "%s\n%s" % (cmd, add_copy_cmd)
-                    print("Add command line \"%s\" for \"%s\" in \"%s\" configuration" % (add_copy_cmd, cmd_event, cur_mode))
-                    cmd_node.firstChild.nodeValue = newCmd
+    def get_event_command(self, event, config):
+        cfg_nodes = self.root_node.getElementsByTagName("ItemDefinitionGroup")
+        ret = ""
+        for cfg_node in cfg_nodes:
+            cond_attr = cfg_node.attributes["Condition"].value
+            if cond_attr.lower().find("debug") >= 0:
+                cur_mode = "Debug"
+            else:
+                cur_mode = "Release"
+
+            if cur_mode.lower() != config.lower():
+                continue
+
+            event_nodes = cfg_node.getElementsByTagName(event)
+            if len(event_nodes) <= 0:
+                continue
+
+            event_node = event_nodes[0]
+            cmd_nodes = event_node.getElementsByTagName("Command")
+            if len(cmd_nodes) <= 0:
+                continue
+
+            cmd_node = cmd_nodes[0]
+            ret = cmd_node.firstChild.nodeValue
+            break
+
+        return ret
+
+    def set_event_command(self, event, command, config=None):
+        cfg_nodes = self.root_node.getElementsByTagName("ItemDefinitionGroup")
+        for cfg_node in cfg_nodes:
+            cond_attr = cfg_node.attributes["Condition"].value
+            if cond_attr.lower().find("debug") >= 0:
+                cur_mode = "Debug"
+            else:
+                cur_mode = "Release"
+
+            if (config is not None) and (cur_mode.lower() != config.lower()):
+                continue
+
+            event_node = self.get_or_create_node(cfg_node, event)
+            cmd_node = self.get_or_create_node(event_node, "Command")
+            cmd_node.firstChild.nodeValue = command
+
+    def set_include_dirs(self, paths):
+        if "%(AdditionalIncludeDirectories)" not in paths:
+            paths.append("%(AdditionalIncludeDirectories)")
+
+        include_value = ";".join(paths)
+        include_value = include_value.replace("/", "\\")
+        cfg_nodes = self.root_node.getElementsByTagName("ItemDefinitionGroup")
+        for cfg_node in cfg_nodes:
+            compile_node = self.get_or_create_node(cfg_node, "ClCompile")
+            include_node = self.get_or_create_node(compile_node, "AdditionalIncludeDirectories")
+            include_node.firstChild.nodeValue = include_value
+
+    def remove_proj_reference(self):
+        itemgroups = self.root_node.getElementsByTagName("ItemGroup")
+        for item in itemgroups:
+            proj_refers = item.getElementsByTagName("ProjectReference")
+            if len(proj_refers) > 0:
+                self.root_node.removeChild(item)
+
+    def remove_predefine_macro(self, macro, config=None):
+        cfg_nodes = self.root_node.getElementsByTagName("ItemDefinitionGroup")
+        for cfg_node in cfg_nodes:
+            cond_attr = cfg_node.attributes["Condition"].value
+            if cond_attr.lower().find("debug") >= 0:
+                cur_mode = "Debug"
+            else:
+                cur_mode = "Release"
+
+            if (config is not None) and (cur_mode.lower() != config.lower()):
+                continue
+
+            compile_node = self.get_or_create_node(cfg_node, "ClCompile")
+            predefine_node = self.get_or_create_node(compile_node, "PreprocessorDefinitions")
+            defined_values = predefine_node.firstChild.nodeValue
+
+            defined_list = defined_values.split(";")
+            if macro in defined_list:
+                defined_list.remove(macro)
+                new_value = ";".join(defined_list)
+                predefine_node.firstChild.nodeValue = new_value
